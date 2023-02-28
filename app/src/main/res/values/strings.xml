@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">agePredict</string>
+    <string name="button">Button</string>
+    <string name="image">image</string>
+    <string name="import_image">Import Image</string>
+    <string name="Take_Photo" />
+    <string name="take_photo">Take Photo</string>
+    <string name="predict">Predict</string>
+    <string name="result">Result:</string>
+    <string name="Inference_Time">Inference Time:</string>
+    <string name="inference_time">Inference Time</string>
+</resources>
