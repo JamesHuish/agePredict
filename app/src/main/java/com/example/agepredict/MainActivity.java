@@ -1,12 +1,17 @@
 package com.example.agepredict;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -21,13 +26,24 @@ import androidx.core.app.ActivityCompat;
 import com.example.agepredict.ml.AgeModel1;
 import com.example.agepredict.ml.AgeModelcnn;
 
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
+import org.opencv.dnn.Dnn;
+import org.opencv.dnn.Net;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -36,12 +52,13 @@ public class MainActivity extends AppCompatActivity {
     TextView result, time;
     ImageView imageView;
     Bitmap bitmap;
+    Mat mat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        OpenCVLoader.initDebug();
         getPermission();
         camaraBtn = findViewById(R.id.camaraButton);
         importBtn = findViewById(R.id.importButton);
@@ -51,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         time = findViewById(R.id.infTime);
 
         ImageProcessor processor = new ImageProcessor.Builder()
-                .add(new ResizeOp(200,200, ResizeOp.ResizeMethod.BILINEAR))
+                .add(new ResizeOp(200, 200, ResizeOp.ResizeMethod.BILINEAR))
                 .build();
 
         importBtn.setOnClickListener(new View.OnClickListener() {
@@ -71,29 +88,51 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 12);
             }
         });
+        byte[] buffer;
+        String prototxt;
+        byte[] caffeModel;
+        try {
+            // Load the prototxt file from the assets directory
+            AssetManager assetManager = getAssets();
+            InputStream inputStream = assetManager.open("age.prototxt");
+            prototxt = readStream(inputStream);
+
+            // Load the caffemodel file from the assets directory
+            inputStream = assetManager.open("dex_chalearn_iccv2015.caffemodel");
+            DataInputStream dataInputStream = new DataInputStream(inputStream);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = dataInputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            caffeModel = outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        net = Dnn.readNetFromCaffe(prototxt, String.valueOf(caffeModel));
+        Log.i(TAG, "Network loaded successfully");
 
         predictBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                try {
-                    AgeModel1 model = AgeModel1.newInstance(MainActivity.this);
-                    long start = System.currentTimeMillis();
+                long start = System.currentTimeMillis();
+
+                Mat blob = Dnn.blobFromImage(mat);
+                net.setInput(blob);
+                Mat prediction = net.forward();
+                result.setText(prediction + "");
+                    /*AgeModel1 model = AgeModel1.newInstance(MainActivity.this);
                     // Creates inputs for reference.
                     TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 200, 200, 3}, DataType.FLOAT32);
                     TensorImage tensorImage = new TensorImage(DataType.FLOAT32);
                     tensorImage.load(bitmap);
                     tensorImage = processor.process(tensorImage);
-                    //bitmap = Bitmap.createScaledBitmap(bitmap,400,400,true);
-                    //TensorImage tensorImage = TensorImage.fromBitmap(bitmap);
                     TensorBuffer tensorBuffer = tensorImage.getTensorBuffer();
-                    Log.d("tensorImage shape", Arrays.toString(tensorBuffer.getShape()));
-                    Log.d("tensorImage data", Arrays.toString(tensorBuffer.getFloatArray()));
                     inputFeature0.loadBuffer(tensorImage.getBuffer());
-                    //inputFeature0.loadBuffer(TensorImage.fromBitmap(bitmap).getBuffer());
-
-                    Log.d("inputFeature0 shape", Arrays.toString(inputFeature0.getShape()));
-                    Log.d("inputFeature0 data", Arrays.toString(inputFeature0.getFloatArray()));
 
                     float[] inputArray = inputFeature0.getFloatArray();
                     for (int i = 0; i < inputArray.length; i++) {
@@ -101,23 +140,17 @@ public class MainActivity extends AppCompatActivity {
                             inputArray[i] = 0;
                         }
                     }
-
                     inputFeature0.loadArray(inputArray);
-                    Log.d("inputFeature0 processed data", Arrays.toString(inputFeature0.getFloatArray()));
                     // Runs model inference and gets result.
                     AgeModel1.Outputs outputs = model.process(inputFeature0);
 
                     TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-                    long inferenceTime = System.currentTimeMillis() - start;
-                    Log.d("outputs shape", Arrays.toString(outputFeature0.getShape()));
-                    Log.d("outputs data", Arrays.toString(outputFeature0.getFloatArray()));
-                    result.setText(outputFeature0.getFloatArray()[0]+"");
-                    time.setText(inferenceTime + "");
-                    // Releases model resources if no longer used.
-                    model.close();
-                } catch (IOException e) {
-                    // TODO Handle the exception
-                }
+
+                    result.setText(outputFeature0.getFloatArray()[0]+"");*/
+                long inferenceTime = System.currentTimeMillis() - start;
+                time.setText(inferenceTime + "");
+                // Releases model resources if no longer used.
+                //model.close();
 
             }
         });
@@ -148,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
             if(data!=null){
                 Uri uri = data.getData();
                 try {
+                    mat = Imgcodecs.imread(uri.getPath());
                     bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
                     imageView.setImageBitmap(bitmap);
                 } catch (IOException e) {
@@ -162,5 +196,14 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-
+    private String readStream(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, len);
+        }
+        return outputStream.toString("UTF-8");
+    }
+    private Net net;
 }
