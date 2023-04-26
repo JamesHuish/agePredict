@@ -6,54 +6,18 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/importButton"
-        android:layout_width="150dp"
-        android:layout_height="60dp"
-        android:text="@string/import_image"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.222"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.658" />
-
     <ImageView
         android:id="@+id/image_View"
         android:layout_width="411dp"
         android:layout_height="416dp"
-        android:contentDescription="@string/image"
         android:adjustViewBounds="false"
-        app:layout_constraintBottom_toTopOf="@+id/importButton"
+        android:contentDescription="@string/image"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.246" />
-
-    <Button
-        android:id="@+id/camaraButton"
-        android:layout_width="150dp"
-        android:layout_height="60dp"
-        android:text="@string/take_photo"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.196"
-        app:layout_constraintStart_toEndOf="@+id/importButton"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.658" />
-
-    <Button
-        android:id="@+id/predictButton"
-        android:layout_width="310dp"
-        android:layout_height="61dp"
-        android:text="@string/predict"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.574"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/importButton"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.013" />
 
     <TextView
         android:id="@+id/result"
@@ -63,51 +27,66 @@
         android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.657"
+        app:layout_constraintHorizontal_bias="0.011"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/predictButton"
-        app:layout_constraintVertical_bias="0.568" />
-
-    <TextView
-        android:id="@+id/infTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:text="@string/inference_time"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.725"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/result"
-        app:layout_constraintVertical_bias="0.0" />
-
-    <Button
-        android:id="@+id/predict"
-        android:layout_width="310dp"
-        android:layout_height="64dp"
-        android:onClick="connectServer"
-        android:text="@string/connect_to_server"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.574"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/predictButton"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.608" />
 
     <Button
         android:id="@+id/heatmap"
         android:layout_width="150dp"
-        android:layout_height="60dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="44dp"
-        android:onClick="requestHeatmap"
+        android:layout_height="70dp"
         android:text="@string/heatmap"
+        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.402"
+        app:layout_constraintStart_toEndOf="@+id/importButton"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.978" />
+
+    <Button
+        android:id="@+id/importButton"
+        android:layout_width="150dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="44dp"
+        android:text="@string/take_import_photo"
+        app:layout_constraintBottom_toTopOf="@+id/predict"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.978" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="150dp"
+        android:layout_height="70dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="100dp"
+        android:onClick="requestAgeChange"
+        android:text="@string/age_change"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/predict"
+        android:layout_width="150dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="44dp"
+        android:layout_marginBottom="100dp"
+        android:onClick="connectServer"
+        android:text="@string/connect_to_server"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/healthButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/health_info"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.222"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/predict"
-        app:layout_constraintVertical_bias="0.416" />
-
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.952" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

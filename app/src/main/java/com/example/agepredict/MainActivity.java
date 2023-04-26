@@ -12,10 +12,19 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
+import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,22 +32,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 
-import com.example.agepredict.ml.MobileNet;
-import com.example.agepredict.ml.MobilenetAug;
-
-import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.image.ImageProcessor;
-import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -51,7 +54,7 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button camaraBtn, importBtn, predictBtn;
+    Button importBtn, heatBtn, healthBtn, closeBtn;
     TextView result, time;
     ImageView imageView;
     Bitmap bitmap;
@@ -59,105 +62,142 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().hide();
         setContentView(R.layout.activity_main);
         getPermission();
-        camaraBtn = findViewById(R.id.camaraButton);
         importBtn = findViewById(R.id.importButton);
         imageView = findViewById(R.id.image_View);
-        predictBtn = findViewById(R.id.predictButton);
+        heatBtn = findViewById(R.id.heatmap);
         result = findViewById(R.id.result);
-        time = findViewById(R.id.infTime);
+        healthBtn = findViewById(R.id.healthButton);
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-        ImageProcessor processor = new ImageProcessor.Builder()
-                .add(new ResizeOp(224,224, ResizeOp.ResizeMethod.BILINEAR))
-                .build();
 
         importBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent camaraIntent = new Intent();
-                camaraIntent.setAction(Intent.ACTION_GET_CONTENT);
-                camaraIntent.setType("image/*");
-                startActivityForResult(camaraIntent, 10);
-            }
-        });
+                // Initializing the popup menu and giving the reference as current context
+                PopupMenu popupMenu = new PopupMenu(MainActivity.this, importBtn);
 
-        camaraBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                // Ensure that there's a camera activity to handle the intent
-                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                    // Create the File where the photo should go
-                    File photoFile = null;
-                    try {
-                        photoFile = createImageFile();
-                    } catch (IOException ex) {
-                        // Error occurred while creating the File
-                    }
-                    // Continue only if the File was successfully created
-                    if (photoFile != null) {
-                        Uri photoURI = FileProvider.getUriForFile(MainActivity.this,
-                                "com.example.agepredict.fileprovider",
-                                photoFile);
-                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                        startActivityForResult(takePictureIntent, 12);
-                    }
-                }
-            }
-        });
-        predictBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+                // Inflating popup menu from popup_menu.xml file
+                popupMenu.getMenuInflater().inflate(R.menu.photo_menu, popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
 
-                try {
-                    MobilenetAug model = MobilenetAug.newInstance(MainActivity.this);
-                    long start = System.currentTimeMillis();
-                    // Creates inputs for reference.
-                    TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 224, 224, 3}, DataType.FLOAT32);
-                    TensorImage tensorImage = new TensorImage(DataType.FLOAT32);
-                    tensorImage.load(bitmap);
-                    tensorImage = processor.process(tensorImage);
-                    inputFeature0.loadBuffer(tensorImage.getBuffer());
-
-                    Log.d("inputFeature0 shape", Arrays.toString(inputFeature0.getShape()));
-                    Log.d("inputFeature0 data", Arrays.toString(inputFeature0.getFloatArray()));
-
-                    float[] inputArray = inputFeature0.getFloatArray();
-                    for (int i = 0; i < inputArray.length; i++) {
-                        if (Float.isNaN(inputArray[i])) {
-                            inputArray[i] = 0;
-                        } else{
-                            inputArray[i] = inputArray[i]/255;
+                        if (menuItem.getTitle().equals("Import Photo")){
+                            Intent camaraIntent = new Intent();
+                            camaraIntent.setAction(Intent.ACTION_GET_CONTENT);
+                            camaraIntent.setType("image/*");
+                            startActivityForResult(camaraIntent, 10);
+                        } else {
+                            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                            // Ensure that there's a camera activity to handle the intent
+                            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                                // Create the File where the photo should go
+                                File photoFile = null;
+                                try {
+                                    photoFile = createImageFile();
+                                } catch (IOException ex) {
+                                    // Error occurred while creating the File
+                                }
+                                // Continue only if the File was successfully created
+                                if (photoFile != null) {
+                                    Uri photoURI = FileProvider.getUriForFile(MainActivity.this,
+                                            "com.example.agepredict.fileprovider",
+                                            photoFile);
+                                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                                    try {
+                                        startActivityForResult(takePictureIntent, 12);
+                                    } catch (RuntimeException ex) {
+                                        // Error occurred while creating the File
+                                    }
+                                }
+                            }
                         }
+                        return true;
                     }
-
-                    inputFeature0.loadArray(inputArray);
-                    Log.d("inputFeature0 processed data", Arrays.toString(inputFeature0.getFloatArray()));
-                    // Runs model inference and gets result.
-                    MobilenetAug.Outputs outputs = model.process(inputFeature0);
-
-                    TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-
-                    long inferenceTime = System.currentTimeMillis() - start;
-                    Log.d("outputs shape", Arrays.toString(outputFeature0.getShape()));
-                    Log.d("outputs data", Arrays.toString(outputFeature0.getIntArray()));
-
-                    result.setText(outputFeature0.getFloatArray()[0]+"");
-                    time.setText(inferenceTime + "");
-                    // Releases model resources if no longer used.
-                    model.close();
-                } catch (IOException e) {
-                    // TODO Handle the exception
-                }
-
+                });
+                popupMenu.show();
             }
         });
+
+        heatBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Initializing the popup menu and giving the reference as current context
+                PopupMenu popupMenu = new PopupMenu(MainActivity.this, heatBtn);
+
+                // Inflating popup menu from popup_menu.xml file
+                popupMenu.getMenuInflater().inflate(R.menu.vis_menu, popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        String ipv4Address = "192.168.68.113";
+                        String portNumber = "5000";
+
+                        String postUrl= "http://"+ipv4Address+":"+portNumber+"/heatmap";
+                        String postBodyText= (String) menuItem.getTitle();
+                        MediaType mediaType = MediaType.parse("text/plain; charset=utf-8");
+                        RequestBody postBody = RequestBody.create(mediaType, postBodyText);
+
+                        postRequest(postUrl, postBody);
+                        return true;
+                    }
+                });
+                popupMenu.show();
+            }
+        });
+
+        Button showPopupButton = findViewById(R.id.healthButton);
+        showPopupButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Show the popup view
+                View popupView = LayoutInflater.from(MainActivity.this).inflate(R.layout.popup, null);
+                PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setTouchable(true);
+                popupWindow.setFocusable(true);
+
+                // Set the size of the popup view
+                int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.8);
+                int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.8);
+                popupWindow.setWidth(width);
+                popupWindow.setHeight(height);
+
+                // Set the popup view to be centered on the screen
+                popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
+
+                // Retrieve a reference to the close button in the popup view
+                Button closeButton = popupView.findViewById(R.id.closeButton);
+                closeButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Dismiss the popup view
+                        popupWindow.dismiss();
+                    }
+                });
+            }
+        });
+
+
+    }
+
+    public void requestAgeChange(View v){
+        String ipv4Address = "192.168.68.113";
+        String portNumber = "5000";
+
+        String postUrl= "http://"+ipv4Address+":"+portNumber+"/ageChange";
+        String postBodyText="Hello";
+        MediaType mediaType = MediaType.parse("text/plain; charset=utf-8");
+        RequestBody postBody = RequestBody.create(mediaType, postBodyText);
+
+        postRequest(postUrl, postBody);
     }
 
     public void requestHeatmap(View v){
-        String ipv4Address = "192.168.1.131";
+        String ipv4Address = "192.168.68.113";
         String portNumber = "5000";
 
         String postUrl= "http://"+ipv4Address+":"+portNumber+"/heatmap";
@@ -168,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         postRequest(postUrl, postBody);
     }
     public void connectServer(View v){
-        String ipv4Address = "192.168.1.131";
+        String ipv4Address = "192.168.68.113";
         String portNumber = "5000";
 
         String postUrl= "http://"+ipv4Address+":"+portNumber+"/predict";
@@ -185,7 +225,10 @@ public class MainActivity extends AppCompatActivity {
 
     void postRequest(String postUrl, RequestBody postBody) {
 
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
 
         Request request = new Request.Builder()
                 .url(postUrl)
@@ -219,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
                             String path = response.request().url().encodedPath();
                             if (path.equals("/predict")) {
                                 responseText.setText(response.body().string());
-                            } else if (path.equals("/heatmap")) {
+                            } else if (path.equals("/heatmap") || path.equals("/ageChange"))  {
                                 InputStream inputStream = response.body().byteStream();
                                 Bitmap imageBitmap = BitmapFactory.decodeStream(inputStream);
                                 imageView.setImageBitmap(imageBitmap);
@@ -286,12 +329,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         else if(requestCode==12){
-            /*bitmap = (Bitmap) data.getExtras().get("data");
-            imageView.setImageBitmap(bitmap);*/
             bitmap = BitmapFactory.decodeFile(currentPhotoPath);
             Matrix matrix = new Matrix();
             matrix.postRotate(90);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            try {
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            } catch (RuntimeException ex){
+                //catch exception if user returns
+                return;
+            }
             imageView.setImageBitmap(bitmap);
         }
         super.onActivityResult(requestCode, resultCode, data);

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/saliency"
+        android:title="@string/saliency_map" />
+
+    <item
+        android:id="@+id/smoothSal"
+        android:title="@string/smooth_saliency_map" />
+
+    <item
+        android:id="@+id/gradcam"
+        android:title="@string/gradcam" />
+
+    <item
+        android:id="@+id/scorecam"
+        android:title="@string/scorecam" />
+</menu>
