@@ -5,6 +5,9 @@ Server which loads ML model, creates model visulisations and augments user image
 
 Main code for application in agePredict/app/src/main/java/com/example/agepredict/MainActivity.java
 
+Model_training folder contains example of code used to train model on IMDB-WIKI, finetune on APPA-REAL, Train aggregate loss model, and evaluate models.
+Datasets and models too large to be included on github
+
 Example of model prediction, visulisation and augmentation (perceived age is average of human predictions):
 
 <img src="https://user-images.githubusercontent.com/46825502/234634613-9a6e0694-0363-4318-831f-3b40a1882af6.png" width="400" height="200">
